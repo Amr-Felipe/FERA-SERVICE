@@ -1,10 +1,11 @@
 
 export enum ServiceType {
-  CORTE_COSTAL = 'corte costal',
-  CORTE_TRATOR = 'corte com trator',
-  CAPINA_MANUAL = 'capina manual',
-  CAPINA_MECANIZADA = 'capina mecanizada',
-  VARRICAO = 'varrição'
+  VARRICAO_KM = 'Varrição (KM)',
+  CAPINA_MANUAL_M2 = 'C. Manual (m²)',
+  ROCADA_MECANIZADA_M2 = 'Roçada Meq (m²)',
+  ROCADA_TRATOR_M2 = 'Roç. c/ Trator (m²)',
+  BOCA_DE_LOBO = 'Boca de Lobo',
+  PINTURA_MEIO_FIO = 'Pint. Meio Fio'
 }
 
 export enum UserRole {
@@ -90,4 +91,5 @@ export interface AppState {
   cashIn: CashIn[];
   cashOut: CashOut[];
   monthlyGoalM2: number;
+  serviceRates: Record<ServiceType, number>;
 }

@@ -9,6 +9,7 @@ import Finance from './components/Finance';
 import Inventory from './components/Inventory';
 import Employees from './components/Employees';
 import AIAssistant from './components/AIAssistant';
+import Settings from './components/Settings';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(() => {
@@ -31,6 +32,7 @@ const App: React.FC = () => {
       case 'inventory': return <Inventory state={state} setState={setState} />;
       case 'employees': return <Employees state={state} setState={setState} />;
       case 'ai': return <AIAssistant state={state} />;
+      case 'settings': return <Settings state={state} setState={setState} />;
       default: return <Dashboard state={state} setState={setState} />;
     }
   };

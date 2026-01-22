@@ -7,6 +7,7 @@ import {
   Package, 
   Users, 
   MessageSquare,
+  Settings,
   LogOut,
   Menu,
   X
@@ -29,6 +30,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
     { id: 'inventory', label: 'Estoque', icon: Package },
     { id: 'employees', label: 'Funcionários', icon: Users },
     { id: 'ai', label: 'Assistente IA', icon: MessageSquare },
+    { id: 'settings', label: 'Configurações', icon: Settings },
   ];
 
   const Sidebar = () => (

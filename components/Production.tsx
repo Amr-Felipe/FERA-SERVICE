@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Area, Service, AppState, ServiceType, Employee } from '../types';
-import { Plus, Trash2, MapPin, Users, Info } from 'lucide-react';
+import { Area, Service, AppState, ServiceType } from '../types';
+import { Plus, Trash2, MapPin, CheckCircle2, Clock, RotateCcw, LayoutGrid, AlertCircle, AlertTriangle } from 'lucide-react';
 import { SERVICE_OPTIONS } from '../constants';
 
 interface ProductionProps {
@@ -11,6 +11,7 @@ interface ProductionProps {
 
 const Production: React.FC<ProductionProps> = ({ state, setState }) => {
   const [isAddingArea, setIsAddingArea] = React.useState(false);
+  const [activeFilter, setActiveFilter] = React.useState<'all' | 'open' | 'closed'>('open');
   const [newArea, setNewArea] = React.useState<Partial<Area>>({
     name: '',
     startDate: new Date().toISOString().split('T')[0],
@@ -21,28 +22,58 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
   });
 
   const handleAddArea = () => {
-    if (!newArea.name) return;
+    if (!newArea.name || !newArea.startReference) {
+      alert("Por favor, preencha o número da O.S. e o ponto de início.");
+      return;
+    }
     const area: Area = {
       id: Math.random().toString(36).substr(2, 9),
       name: newArea.name!,
       startDate: newArea.startDate!,
       startReference: newArea.startReference!,
-      endReference: newArea.endReference!,
+      endReference: newArea.endReference || 'Não informado',
       observations: newArea.observations!,
       services: []
     };
     setState(prev => ({ ...prev, areas: [...prev.areas, area] }));
     setIsAddingArea(false);
-    setNewArea({ name: '', startDate: '', startReference: '', endReference: '', observations: '', services: [] });
+    setNewArea({ name: '', startDate: new Date().toISOString().split('T')[0], startReference: '', endReference: '', observations: '', services: [] });
+  };
+
+  const finalizeArea = (areaId: string) => {
+    // Alerta de confirmação solicitado pelo usuário
+    const confirmMessage = "⚠️ ATENÇÃO: Deseja realmente ENCERRAR esta O.S.?\n\nIsso bloqueará edições e registrará o valor total no faturamento do mês.";
+    if (window.confirm(confirmMessage)) {
+      const endDate = prompt("Confirme a data de conclusão (AAAA-MM-DD):", new Date().toISOString().split('T')[0]);
+      if (endDate) {
+        setState(prev => ({
+          ...prev,
+          areas: prev.areas.map(a => a.id === areaId ? { ...a, endDate } : a)
+        }));
+      }
+    }
+  };
+
+  const reopenArea = (areaId: string) => {
+    const confirmMessage = "🔄 REABRIR O.S.: Deseja habilitar esta O.S. para edições ou retrabalho?\n\nA data de encerramento anterior será removida.";
+    if (window.confirm(confirmMessage)) {
+      setState(prev => ({
+        ...prev,
+        areas: prev.areas.map(a => a.id === areaId ? { ...a, endDate: undefined } : a)
+      }));
+    }
   };
 
   const handleAddService = (areaId: string) => {
+    const defaultType = ServiceType.CAPINA_MANUAL_M2;
+    const currentRate = state.serviceRates[defaultType] || 0;
+
     const service: Service = {
       id: Math.random().toString(36).substr(2, 9),
       areaId,
-      type: ServiceType.CORTE_COSTAL,
+      type: defaultType,
       areaM2: 0,
-      unitValue: 0,
+      unitValue: currentRate,
       totalValue: 0
     };
     
@@ -62,7 +93,10 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
           services: a.services.map(s => {
             if (s.id !== serviceId) return s;
             const updated = { ...s, [field]: value };
-            if (field === 'areaM2' || field === 'unitValue') {
+            if (field === 'type') {
+              updated.unitValue = state.serviceRates[value as ServiceType] || 0;
+            }
+            if (field === 'areaM2' || field === 'unitValue' || field === 'type') {
               updated.totalValue = (updated.areaM2 || 0) * (updated.unitValue || 0);
             }
             return updated;
@@ -72,189 +106,229 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
     }));
   };
 
-  // Vínculo de funcionário à produção (Simulação simplificada para o registro de produção)
-  const assignEmployeeToService = (serviceId: string, employeeId: string) => {
-    const service = state.areas.flatMap(a => a.services).find(s => s.id === serviceId);
-    if (!service) return;
-
-    setState(prev => ({
-      ...prev,
-      productionRecords: [
-        ...prev.productionRecords,
-        {
-          id: Math.random().toString(36).substr(2, 9),
-          employeeId,
-          serviceId,
-          associatedValue: service.totalValue,
-          date: new Date().toISOString().split('T')[0]
-        }
-      ]
-    }));
-    alert('Produção vinculada ao funcionário com sucesso!');
-  };
+  const filteredAreas = state.areas.filter(a => {
+    if (activeFilter === 'open') return !a.endDate;
+    if (activeFilter === 'closed') return !!a.endDate;
+    return true;
+  });
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Controle de Produção</h2>
-          <p className="text-slate-500">Gestão de áreas e metragens por serviço.</p>
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Gestão de O.S.</h2>
+          <p className="text-slate-500 font-medium">Controle de produção urbana e medições.</p>
         </div>
         <button 
           onClick={() => setIsAddingArea(true)}
-          className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+          className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/20 active:scale-95"
         >
-          <Plus size={20} />
-          Nova Área
+          <Plus size={20} strokeWidth={3} />
+          Abrir Nova O.S.
+        </button>
+      </div>
+
+      {/* Navegação de Status */}
+      <div className="flex bg-slate-200/50 p-1.5 rounded-3xl w-fit border border-slate-200">
+        <button 
+          onClick={() => setActiveFilter('open')}
+          className={`px-8 py-3 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeFilter === 'open' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          <Clock size={16} /> Em Execução
+        </button>
+        <button 
+          onClick={() => setActiveFilter('closed')}
+          className={`px-8 py-3 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeFilter === 'closed' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          <CheckCircle2 size={16} /> Finalizadas
+        </button>
+        <button 
+          onClick={() => setActiveFilter('all')}
+          className={`px-8 py-3 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeFilter === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          <LayoutGrid size={16} /> Mostrar Todas
         </button>
       </div>
 
       {isAddingArea && (
-        <div className="bg-white p-6 rounded-2xl border border-blue-200 shadow-xl space-y-4 animate-in fade-in slide-in-from-top-4">
-          <h3 className="font-bold text-lg text-slate-800">Cadastrar Nova Área de Trabalho</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase">Nome do Local</label>
+        <div className="bg-white p-8 rounded-[40px] border-4 border-blue-500/10 shadow-2xl space-y-8 animate-in zoom-in-95">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-blue-600 text-white rounded-3xl flex items-center justify-center shadow-lg shadow-blue-200">
+              <Plus size={28} strokeWidth={3} />
+            </div>
+            <div>
+              <h3 className="font-black text-2xl text-slate-800 uppercase tracking-tight">Nova Ordem de Serviço</h3>
+              <p className="text-slate-500 font-medium italic">Inicie o registro de um novo logradouro ou trecho.</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Nº Controle da O.S.</label>
               <input 
-                className="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" 
-                placeholder="Ex: Av. das Palmeiras" 
+                className="w-full border-2 border-slate-100 p-5 rounded-2xl focus:border-blue-500 outline-none transition-all font-black text-slate-700 bg-slate-50" 
+                placeholder="Ex: OS-2024-00X" 
                 value={newArea.name} onChange={e => setNewArea({...newArea, name: e.target.value})}
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase">Data Início</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Data de Início</label>
               <input 
-                type="date" className="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" 
+                type="date" className="w-full border-2 border-slate-100 p-5 rounded-2xl focus:border-blue-500 outline-none transition-all font-bold bg-slate-50" 
                 value={newArea.startDate} onChange={e => setNewArea({...newArea, startDate: e.target.value})}
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase">Ponto Inicial (Ref)</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Ponto Inicial (Escrito)</label>
               <input 
-                className="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" 
-                placeholder="Início do trecho" 
+                className="w-full border-2 border-slate-100 p-5 rounded-2xl focus:border-blue-500 outline-none transition-all font-medium bg-slate-50" 
+                placeholder="Ex: Trevo de entrada da cidade" 
                 value={newArea.startReference} onChange={e => setNewArea({...newArea, startReference: e.target.value})}
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase">Ponto Final (Ref)</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Ponto Final (Escrito)</label>
               <input 
-                className="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" 
-                placeholder="Fim do trecho" 
+                className="w-full border-2 border-slate-100 p-5 rounded-2xl focus:border-blue-500 outline-none transition-all font-medium bg-slate-50" 
+                placeholder="Ex: Cruzamento com a Av. Central" 
                 value={newArea.endReference} onChange={e => setNewArea({...newArea, endReference: e.target.value})}
               />
             </div>
           </div>
-          <div className="flex gap-2 justify-end pt-4">
-            <button onClick={() => setIsAddingArea(false)} className="px-6 py-2 text-slate-500 font-bold">Cancelar</button>
-            <button onClick={handleAddArea} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-200">Salvar Área</button>
+          <div className="flex gap-4 justify-end pt-4">
+            <button onClick={() => setIsAddingArea(false)} className="px-10 py-4 text-slate-400 font-black uppercase text-xs hover:text-slate-600 transition-all">Cancelar</button>
+            <button onClick={handleAddArea} className="bg-slate-900 text-white px-12 py-5 rounded-[24px] font-black uppercase text-sm shadow-2xl hover:bg-slate-800 transition-all tracking-[0.2em]">Criar O.S.</button>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-8">
-        {state.areas.length === 0 && (
-          <div className="bg-white p-20 rounded-3xl border border-dashed border-slate-200 text-center space-y-4">
-            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto">
-               <MapPin size={40} className="text-slate-300" />
+      <div className="grid grid-cols-1 gap-10">
+        {filteredAreas.length === 0 && (
+          <div className="bg-white p-32 rounded-[60px] border-4 border-dashed border-slate-100 text-center">
+            <div className="w-24 h-24 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto mb-8">
+               <AlertCircle size={48} />
             </div>
-            <p className="text-slate-400 font-medium">Nenhuma área registrada. Comece criando uma área de trabalho.</p>
+            <p className="text-slate-300 font-black text-xl uppercase tracking-tighter">Nenhum registro encontrado</p>
           </div>
         )}
         
-        {state.areas.map(area => (
-          <div key={area.id} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden transition-all hover:shadow-md">
-            <div className="p-6 bg-slate-900 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/40">
-                  <MapPin size={24} />
+        {filteredAreas.map(area => (
+          <div key={area.id} className={`bg-white rounded-[48px] shadow-sm border-2 ${area.endDate ? 'border-emerald-100' : 'border-slate-50'} overflow-hidden transition-all group hover:shadow-2xl hover:shadow-slate-200/50`}>
+            <div className={`p-10 ${area.endDate ? 'bg-emerald-50/20' : 'bg-white'} border-b border-slate-50 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8`}>
+              <div className="flex items-center gap-8">
+                <div className={`w-20 h-20 ${area.endDate ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'} rounded-[32px] flex items-center justify-center shadow-2xl transition-transform group-hover:scale-105`}>
+                  {area.endDate ? <CheckCircle2 size={36} /> : <MapPin size={36} />}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold tracking-tight">{area.name}</h3>
-                  <div className="flex items-center gap-3 text-slate-400 text-xs font-medium mt-1">
-                    <span>{area.startDate}</span>
-                    <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
-                    <span>{area.startReference} ➜ {area.endReference}</span>
+                  <div className="flex items-center gap-4 mb-3">
+                    <h3 className="text-3xl font-black text-slate-800 tracking-tighter uppercase">{area.name}</h3>
+                    {area.endDate ? (
+                      <span className="bg-emerald-100 text-emerald-700 text-[10px] px-4 py-1.5 rounded-full font-black uppercase border border-emerald-200 tracking-widest">Finalizada</span>
+                    ) : (
+                      <span className="bg-blue-100 text-blue-700 text-[10px] px-4 py-1.5 rounded-full font-black uppercase border border-blue-200 tracking-widest">Em Aberto</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-8 gap-y-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                    <span className="flex items-center gap-2"><Clock size={16} className="text-blue-500" /> Abertura: {area.startDate}</span>
+                    {area.endDate && <span className="flex items-center gap-2 text-emerald-600"><CheckCircle2 size={16} /> Conclusão: {area.endDate}</span>}
+                    <span className="text-slate-600 bg-slate-100 px-4 py-2 rounded-xl border border-slate-200/50">{area.startReference} ➜ {area.endReference}</span>
                   </div>
                 </div>
               </div>
-              <div className="bg-slate-800/50 px-6 py-3 rounded-2xl border border-slate-700">
-                <p className="text-[10px] uppercase font-bold text-slate-500">Valor Estimado da Área</p>
-                <p className="text-2xl font-bold text-blue-400">
-                  R$ {area.services.reduce((acc, s) => acc + s.totalValue, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
+
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-6 w-full xl:w-auto">
+                <div className="bg-slate-900 text-white px-10 py-5 rounded-[32px] shadow-2xl text-right w-full sm:w-auto">
+                  <p className="text-[10px] uppercase font-black text-slate-500 mb-1 tracking-widest">Produção Acumulada</p>
+                  <p className="text-3xl font-black tracking-tighter">
+                    R$ {area.services.reduce((acc, s) => acc + s.totalValue, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                
+                <div className="flex gap-3 w-full sm:w-auto">
+                  {area.endDate ? (
+                    <button 
+                      onClick={() => reopenArea(area.id)}
+                      className="flex-1 sm:flex-none text-[10px] font-black uppercase tracking-widest bg-amber-500 text-white px-8 py-5 rounded-3xl hover:bg-amber-600 transition-all flex items-center justify-center gap-2 shadow-xl shadow-amber-900/10 active:scale-95"
+                    >
+                      <RotateCcw size={18} /> Reabrir O.S.
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => finalizeArea(area.id)}
+                      className="flex-1 sm:flex-none text-[10px] font-black uppercase tracking-widest bg-emerald-600 text-white px-10 py-5 rounded-3xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-900/10 active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      Encerrar O.S.
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="p-8">
-              <div className="space-y-6">
-                {area.services.map(service => (
-                  <div key={service.id} className="group relative">
-                    <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 items-center bg-slate-50 p-6 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all">
-                      <div className="lg:col-span-2">
-                        <label className="text-[10px] uppercase font-black text-slate-400 block mb-2">Tipo de Serviço</label>
-                        <select 
-                          className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-semibold text-slate-700"
-                          value={service.type}
-                          onChange={e => updateService(area.id, service.id, 'type', e.target.value)}
-                        >
-                          {SERVICE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-[10px] uppercase font-black text-slate-400 block mb-2">Metragem (m²)</label>
-                        <input 
-                          type="number" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold"
-                          value={service.areaM2}
-                          onChange={e => updateService(area.id, service.id, 'areaM2', parseFloat(e.target.value))}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] uppercase font-black text-slate-400 block mb-2">Valor/m²</label>
-                        <input 
-                          type="number" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold text-emerald-600"
-                          value={service.unitValue}
-                          onChange={e => updateService(area.id, service.id, 'unitValue', parseFloat(e.target.value))}
-                        />
-                      </div>
-                      <div className="bg-white/50 p-3 rounded-xl border border-dashed border-slate-200">
-                        <label className="text-[10px] uppercase font-black text-slate-400 block mb-1">Total</label>
-                        <p className="text-lg font-black text-slate-900">R$ {service.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                         <div className="relative group/tooltip">
-                            <button 
-                              onClick={() => {
-                                const empId = prompt("Digite o ID do funcionário ou selecione da lista (Simulação)");
-                                if(empId) assignEmployeeToService(service.id, empId);
-                              }}
-                              className="p-3 bg-white text-slate-400 hover:text-blue-600 border border-slate-200 rounded-xl transition-all shadow-sm"
-                            >
-                              <Users size={18} />
-                            </button>
-                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover/tooltip:opacity-100 transition-opacity whitespace-nowrap">Vincular Funcionário</span>
-                         </div>
-                        <button 
-                          onClick={() => setState(prev => ({
-                            ...prev,
-                            areas: prev.areas.map(a => a.id === area.id ? { ...a, services: a.services.filter(s => s.id !== service.id) } : a)
-                          }))}
-                          className="p-3 bg-white text-slate-400 hover:text-red-500 border border-slate-200 rounded-xl transition-all shadow-sm"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
+            <div className="p-10 space-y-6">
+              {area.services.length === 0 && !area.endDate && (
+                 <div className="py-16 border-4 border-dashed border-slate-50 rounded-[40px] flex flex-col items-center gap-4 text-slate-300">
+                    <AlertTriangle size={48} />
+                    <p className="font-black text-sm uppercase tracking-[0.2em]">Aguardando lançamento de itens...</p>
+                 </div>
+              )}
+              
+              {area.services.map(service => (
+                <div key={service.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 items-center bg-slate-50/50 p-8 rounded-[36px] border border-slate-100 group/item hover:border-blue-300 hover:bg-white transition-all">
+                  <div className="lg:col-span-2">
+                    <label className="text-[9px] uppercase font-black text-slate-400 block mb-3 tracking-widest px-1">Tipo de Serviço</label>
+                    <select 
+                      disabled={!!area.endDate}
+                      className="w-full bg-white border-2 border-slate-100 rounded-2xl p-4 text-sm font-black text-slate-700 disabled:opacity-50 appearance-none shadow-sm focus:border-blue-500 outline-none"
+                      value={service.type}
+                      onChange={e => updateService(area.id, service.id, 'type', e.target.value)}
+                    >
+                      {SERVICE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] uppercase font-black text-slate-400 block mb-3 tracking-widest px-1">Medição (m²/KM)</label>
+                    <input 
+                      disabled={!!area.endDate}
+                      type="number" 
+                      className="w-full bg-white border-2 border-slate-100 rounded-2xl p-4 text-sm font-black disabled:opacity-50 shadow-sm focus:border-blue-500 outline-none"
+                      value={service.areaM2}
+                      onChange={e => updateService(area.id, service.id, 'areaM2', parseFloat(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] uppercase font-black text-slate-400 block mb-3 tracking-widest px-1">Tabela R$/Un</label>
+                    <div className="p-4 text-sm font-black text-slate-400 bg-slate-100/50 rounded-2xl border border-slate-200/30">
+                      R$ {service.unitValue.toFixed(2)}
                     </div>
                   </div>
-                ))}
-                
+                  <div className="bg-blue-600 p-5 rounded-[24px] shadow-2xl shadow-blue-900/10">
+                    <label className="text-[9px] uppercase font-black text-blue-200 block mb-1 tracking-widest">Total Item</label>
+                    <p className="text-2xl font-black text-white tracking-tighter">R$ {service.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                  <div className="flex justify-end">
+                    {!area.endDate && (
+                      <button 
+                        onClick={() => setState(prev => ({
+                          ...prev,
+                          areas: prev.areas.map(a => a.id === area.id ? { ...a, services: a.services.filter(s => s.id !== service.id) } : a)
+                        }))}
+                        className="p-5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all group-hover/item:text-slate-300"
+                      >
+                        <Trash2 size={24} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {!area.endDate && (
                 <button 
                   onClick={() => handleAddService(area.id)}
-                  className="w-full py-5 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/30 transition-all flex items-center justify-center gap-3"
+                  className="w-full py-8 border-4 border-dashed border-slate-100 rounded-[40px] text-slate-300 font-black text-xs hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center justify-center gap-4 uppercase tracking-[0.3em]"
                 >
-                  <Plus size={20} /> Adicionar Serviço nesta Área
+                  <Plus size={24} strokeWidth={4} /> Adicionar Item de Serviço à O.S.
                 </button>
-              </div>
+              )}
             </div>
           </div>
         ))}
