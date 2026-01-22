@@ -34,15 +34,16 @@ const App: React.FC = () => {
   }, [state]);
 
   const renderContent = () => {
+    const commonProps = { state, setState, setActiveTab };
     switch (activeTab) {
-      case 'dashboard': return <Dashboard state={state} setState={setState} />;
-      case 'production': return <Production state={state} setState={setState} />;
-      case 'finance': return <Finance state={state} setState={setState} />;
-      case 'inventory': return <Inventory state={state} setState={setState} />;
-      case 'employees': return <Employees state={state} setState={setState} />;
+      case 'dashboard': return <Dashboard {...commonProps} />;
+      case 'production': return <Production {...commonProps} />;
+      case 'finance': return <Finance {...commonProps} />;
+      case 'inventory': return <Inventory {...commonProps} />;
+      case 'employees': return <Employees {...commonProps} />;
       case 'ai': return <AIAssistant state={state} />;
-      case 'settings': return <Settings state={state} setState={setState} />;
-      default: return <Dashboard state={state} setState={setState} />;
+      case 'settings': return <Settings {...commonProps} />;
+      default: return <Dashboard {...commonProps} />;
     }
   };
 
