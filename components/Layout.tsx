@@ -24,12 +24,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const menuItems = [
-    { id: 'dashboard', label: 'Início', icon: LayoutDashboard },
-    { id: 'production', label: 'O.S.', icon: MapPin },
-    { id: 'finance', label: 'Caixa', icon: DollarSign },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'production', label: 'Produção', icon: MapPin },
+    { id: 'finance', label: 'Finanças', icon: DollarSign },
     { id: 'inventory', label: 'Estoque', icon: Package },
-    { id: 'employees', label: 'RH', icon: Users },
-    { id: 'ai', label: 'IA', icon: MessageSquare },
+    { id: 'employees', label: 'Funcionários', icon: Users },
+    { id: 'ai', label: 'Fera Bot', icon: MessageSquare },
     { id: 'settings', label: 'Conf.', icon: Settings },
   ];
 
