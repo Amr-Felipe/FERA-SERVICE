@@ -13,15 +13,24 @@ import Settings from './components/Settings';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem('gestor_urbano_state');
-    return saved ? JSON.parse(saved) : INITIAL_STATE;
+    try {
+      const saved = localStorage.getItem('gestor_urbano_state');
+      return saved ? JSON.parse(saved) : INITIAL_STATE;
+    } catch (e) {
+      console.warn("Acesso ao localStorage negado ou corrompido. Usando estado inicial.", e);
+      return INITIAL_STATE;
+    }
   });
 
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [userRole, setUserRole] = useState<UserRole>(UserRole.ADMIN);
+  const [userRole] = useState<UserRole>(UserRole.ADMIN);
 
   useEffect(() => {
-    localStorage.setItem('gestor_urbano_state', JSON.stringify(state));
+    try {
+      localStorage.setItem('gestor_urbano_state', JSON.stringify(state));
+    } catch (e) {
+      console.error("Falha ao salvar estado no localStorage:", e);
+    }
   }, [state]);
 
   const renderContent = () => {
