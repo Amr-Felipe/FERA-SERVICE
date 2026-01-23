@@ -2,8 +2,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { AppState } from "../types";
 
-export const askAssistant = async (question: string, state: AppState) => {
-  // Use named parameter and direct process.env.API_KEY access
+export const askAssistant = async (history: { role: 'user' | 'bot'; text: string }[], state: AppState) => {
+  // Inicialização segura via variável de ambiente
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const context = {
@@ -15,39 +15,42 @@ export const askAssistant = async (question: string, state: AppState) => {
     goalM2: state.monthlyGoalM2,
     employeesCount: state.employees.length,
     activeEmployees: state.employees.filter(e => e.status === 'active').length,
-    productionPerEmployeeRecords: state.productionRecords.length
+    attendanceToday: state.attendanceRecords.filter(r => r.date === new Date().toISOString().split('T')[0] && r.status === 'present').length
   };
 
+  // Conversão do histórico para o formato da API Gemini
+  const contents = history.map(msg => ({
+    role: msg.role === 'bot' ? 'model' : 'user',
+    parts: [{ text: msg.text }]
+  }));
+
   try {
-    // Upgraded to gemini-3-pro-preview for complex operational reasoning tasks
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: question,
+      contents: contents,
       config: {
-        // Use systemInstruction for defining behavioral constraints and context
-        systemInstruction: `Você é o Diretor de Operações Inteligente de uma empresa de manutenção urbana.
-      Você tem acesso aos dados operacionais e financeiros em tempo real.
+        systemInstruction: `Você é o Diretor de Operações Inteligente da Fera Service, empresa líder em manutenção urbana.
       
-      REGRAS DE NEGÓCIO IMPORTANTES:
-      1. Produção de um mês é recebida no mês seguinte.
-      2. O recebimento é fatiado: 5º dia útil e dia 15.
-      3. Metas são calculadas em m².
-      
-      DADOS DO SISTEMA:
+      SEU CONTEXTO OPERACIONAL EM TEMPO REAL:
       ${JSON.stringify(context, null, 2)}
       
-      INSTRUÇÃO: Responda em português, de forma profissional, executiva e baseada em dados. Se houver alertas (estoque baixo ou meta longe), mencione-os de forma proativa.`,
-        temperature: 0.2,
-        // When setting maxOutputTokens, a thinkingBudget must be set to ensure valid output
-        maxOutputTokens: 2000,
-        thinkingConfig: { thinkingBudget: 1000 },
+      SUA PERSONALIDADE E REGRAS:
+      1. Profissionalismo Executivo: Responda como um consultor sênior de operações.
+      2. Foco em Dados: Use números do contexto para embasar suas sugestões.
+      3. Proatividade: Se vir que o estoque está baixo ou a meta de m² está longe, alerte o usuário.
+      4. Regras Financeiras: Lembre que a produção deste mês é faturada no próximo (5º dia útil e dia 15).
+      5. Concisão: Vá direto ao ponto, mas seja educado.
+      
+      Sempre que mencionar valores monetários, use o formato R$ #.###,##.`,
+        temperature: 0.3,
+        maxOutputTokens: 1500,
+        thinkingConfig: { thinkingBudget: 500 },
       }
     });
 
-    // Access .text property directly (not a method)
     return response.text;
   } catch (error) {
-    console.error("Erro na API Gemini:", error);
+    console.error("Erro na inteligência artificial:", error);
     throw error;
   }
 };
