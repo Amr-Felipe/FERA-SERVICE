@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppState, UserRole } from './types';
+import { AppState, UserRole, User } from './types';
 import { INITIAL_STATE } from './constants';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
@@ -10,16 +10,15 @@ import Inventory from './components/Inventory';
 import Employees from './components/Employees';
 import AIAssistant from './components/AIAssistant';
 import Settings from './components/Settings';
+import Login from './components/Login';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(() => {
     try {
       const saved = localStorage.getItem('gestor_urbano_state');
-      if (!saved) return INITIAL_STATE;
+      if (!saved) return { ...INITIAL_STATE, currentUser: null };
       
       const parsed = JSON.parse(saved);
-      // Garante que novas chaves adicionadas ao sistema (como attendanceRecords) 
-      // existam mesmo se o usuário tiver um save antigo no navegador.
       return {
         ...INITIAL_STATE,
         ...parsed,
@@ -29,15 +28,15 @@ const App: React.FC = () => {
         inventory: parsed.inventory || INITIAL_STATE.inventory,
         cashIn: parsed.cashIn || INITIAL_STATE.cashIn,
         cashOut: parsed.cashOut || INITIAL_STATE.cashOut,
+        currentUser: parsed.currentUser || null
       };
     } catch (e) {
       console.warn("Erro ao restaurar estado. Usando inicial.", e);
-      return INITIAL_STATE;
+      return { ...INITIAL_STATE, currentUser: null };
     }
   });
 
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [userRole] = useState<UserRole>(UserRole.ADMIN);
 
   useEffect(() => {
     try {
@@ -46,6 +45,22 @@ const App: React.FC = () => {
       console.error("Falha ao salvar estado:", e);
     }
   }, [state]);
+
+  const handleLogin = (user: User) => {
+    setState(prev => ({ ...prev, currentUser: user }));
+    setActiveTab('dashboard');
+  };
+
+  const handleLogout = () => {
+    if (window.confirm("Deseja realmente sair do sistema?")) {
+      setState(prev => ({ ...prev, currentUser: null }));
+    }
+  };
+
+  // Se não estiver logado, exibe apenas a tela de login
+  if (!state.currentUser) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   const renderContent = () => {
     const commonProps = { state, setState, setActiveTab };
@@ -65,7 +80,9 @@ const App: React.FC = () => {
     <Layout 
       activeTab={activeTab} 
       setActiveTab={setActiveTab} 
-      userRole={userRole}
+      userRole={state.currentUser.role}
+      onLogout={handleLogout}
+      user={state.currentUser}
     >
       {renderContent()}
     </Layout>

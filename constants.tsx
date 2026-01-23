@@ -1,6 +1,7 @@
 
 import { AppState, ServiceType } from './types';
 
+// Fixed: Added missing 'currentUser' property to comply with AppState interface
 export const INITIAL_STATE: AppState = {
   areas: [
     {
@@ -49,7 +50,8 @@ export const INITIAL_STATE: AppState = {
     [ServiceType.ROCADA_TRATOR_M2]: 0.90,
     [ServiceType.BOCA_DE_LOBO]: 45.00,
     [ServiceType.PINTURA_MEIO_FIO]: 1.20,
-  }
+  },
+  currentUser: null
 };
 
 export const SERVICE_OPTIONS = Object.values(ServiceType);

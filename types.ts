@@ -13,6 +13,14 @@ export enum UserRole {
   OPERATIONAL = 'OPERATIONAL'
 }
 
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  avatarUrl?: string;
+}
+
 export interface Area {
   id: string;
   name: string;
@@ -40,7 +48,6 @@ export interface Employee {
   role: string;
   status: 'active' | 'inactive';
   defaultDailyRate?: number;
-  // Novos campos de dados pessoais
   cpf?: string;
   birthDate?: string;
   address?: string;
@@ -56,7 +63,7 @@ export interface AttendanceRecord {
   date: string;
   value: number;
   status: 'present' | 'absent';
-  paymentStatus?: 'paid' | 'pending'; // Novo campo
+  paymentStatus?: 'paid' | 'pending';
 }
 
 export interface ProductionRecord {
@@ -112,4 +119,5 @@ export interface AppState {
   cashOut: CashOut[];
   monthlyGoalM2: number;
   serviceRates: Record<ServiceType, number>;
+  currentUser: User | null;
 }

@@ -10,17 +10,21 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  User as UserIcon
 } from 'lucide-react';
+import { User } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   userRole: string;
+  onLogout?: () => void;
+  user?: User;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, userRole }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, userRole, onLogout, user }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const menuItems = [
@@ -40,9 +44,15 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/20">FS</div>
           Fera Service
         </h1>
-        <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1 opacity-60">
-          {userRole === 'ADMIN' ? 'Administrador' : 'Operacional'}
-        </p>
+        <div className="mt-4 flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
+           <div className="w-8 h-8 bg-slate-700 rounded-xl flex items-center justify-center text-xs font-black">
+             {user?.name?.charAt(0) || <UserIcon size={14} />}
+           </div>
+           <div className="min-w-0">
+             <p className="text-[10px] font-black text-white truncate">{user?.name || 'Usuário'}</p>
+             <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest truncate">{userRole}</p>
+           </div>
+        </div>
       </div>
       
       <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
@@ -66,9 +76,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
       </nav>
 
       <div className="p-4 border-t border-slate-800">
-        <button className="flex items-center gap-3 px-4 py-3.5 w-full text-slate-500 hover:text-red-400 hover:bg-red-900/10 rounded-2xl transition-all font-black uppercase text-xs tracking-widest">
+        <button 
+          onClick={onLogout}
+          className="flex items-center gap-3 px-4 py-3.5 w-full text-slate-500 hover:text-red-400 hover:bg-red-900/10 rounded-2xl transition-all font-black uppercase text-xs tracking-widest"
+        >
           <LogOut size={18} />
-          <span>Sair</span>
+          <span>Sair do Sistema</span>
         </button>
       </div>
     </div>
@@ -79,7 +92,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
       {/* Top Header Mobile */}
       <div className="lg:hidden flex items-center justify-between px-5 py-4 bg-white border-b border-slate-100 sticky top-0 z-40">
         <div className="flex items-center gap-2">
-           <div className="w-7 h-7 bg-slate-900 rounded-lg flex items-center justify-center text-white text-xs font-black">G</div>
+           <div className="w-7 h-7 bg-slate-900 rounded-lg flex items-center justify-center text-white text-xs font-black">FS</div>
            <h1 className="font-black text-slate-800 text-sm tracking-tighter uppercase">{activeTab}</h1>
         </div>
         <button 
@@ -117,7 +130,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation style App */}
+      {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-2 py-2 flex justify-around items-center z-40 shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
         {menuItems.slice(0, 5).map((item) => (
           <button
