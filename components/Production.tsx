@@ -217,15 +217,6 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
         
         {filteredAreas.map(area => (
           <div key={area.id} className={`bg-white rounded-3xl shadow-sm border ${area.endDate ? 'border-emerald-100' : 'border-slate-100'} transition-all hover:shadow-md overflow-hidden relative group`}>
-            {/* Botão de Excluir O.S. */}
-            <button 
-              onClick={() => deleteArea(area.id)}
-              className="absolute top-4 right-4 p-2 text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all z-10"
-              title="Excluir O.S."
-            >
-              <Trash2 size={16} />
-            </button>
-
             {/* Cabeçalho do Card */}
             <div className={`px-4 py-4 md:px-6 md:py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${area.endDate ? 'bg-emerald-50/20' : 'bg-slate-50/10'}`}>
               <div className="flex items-center gap-3 pr-8">
@@ -252,11 +243,23 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
                     R$ {area.services.reduce((acc, s) => acc + s.totalValue, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                {area.endDate ? (
-                  <button onClick={() => reopenArea(area.id)} className="p-2 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"><RotateCcw size={16} /></button>
-                ) : (
-                  <button onClick={() => finalizeArea(area.id)} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-sm">Encerrar</button>
-                )}
+                
+                <div className="flex items-center gap-2">
+                  {area.endDate ? (
+                    <button onClick={() => reopenArea(area.id)} className="p-2 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"><RotateCcw size={16} /></button>
+                  ) : (
+                    <button onClick={() => finalizeArea(area.id)} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-sm">Encerrar</button>
+                  )}
+                  
+                  {/* Botão de Excluir O.S. agora integrado ao fluxo de botões para evitar sobreposição */}
+                  <button 
+                    onClick={() => deleteArea(area.id)}
+                    className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                    title="Excluir O.S."
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             </div>
 
