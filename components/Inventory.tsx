@@ -13,7 +13,10 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   ListFilter,
-  ChevronDown
+  ChevronDown,
+  Filter,
+  CheckCircle2,
+  Tag
 } from 'lucide-react';
 
 interface InventoryProps {
@@ -23,6 +26,8 @@ interface InventoryProps {
 
 const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
   
   // Estados para o painel de movimentação com busca
@@ -56,9 +61,18 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
     return dateStr.split('-').reverse().join('/');
   };
 
-  const filteredItems = state.inventory.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Lógica de filtragem combinada
+  const filteredItems = state.inventory.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+    
+    const isCritical = item.currentQty <= item.minQty;
+    const matchesStatus = statusFilter === 'all' || 
+                         (statusFilter === 'critical' && isCritical) || 
+                         (statusFilter === 'ok' && !isCritical);
+
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
 
   const filteredDropdownItems = useMemo(() => {
     return state.inventory
@@ -267,21 +281,67 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
         </div>
       </div>
 
-      {/* TABELA DE ESTOQUE ATUAL */}
+      {/* TABELA DE ESTOQUE ATUAL COM FILTROS */}
       <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden relative z-0">
-        <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/30">
-          <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-slate-900 text-white rounded-lg flex items-center justify-center"><ListFilter size={16} /></div>
-             <h3 className="font-black text-sm text-slate-800 uppercase tracking-tight">Saldo em Estoque</h3>
+        <div className="p-6 border-b border-slate-100 bg-slate-50/30 flex flex-col space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+               <div className="w-8 h-8 bg-slate-900 text-white rounded-lg flex items-center justify-center"><ListFilter size={16} /></div>
+               <h3 className="font-black text-sm text-slate-800 uppercase tracking-tight">Saldo em Estoque</h3>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input 
+                className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500/10 w-full md:w-64"
+                placeholder="Pesquisar no saldo..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input 
-              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500/10 w-full md:w-64"
-              placeholder="Pesquisar no saldo..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
+
+          {/* BARRA DE FILTROS ADICIONAIS */}
+          <div className="flex flex-wrap gap-3 pt-2">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-xl">
+              <Tag size={14} className="text-slate-400" />
+              <select 
+                className="bg-transparent text-[10px] font-black uppercase outline-none text-slate-600"
+                value={categoryFilter}
+                onChange={e => setCategoryFilter(e.target.value)}
+              >
+                <option value="all">Todas Categorias</option>
+                <option value="peças">Peças</option>
+                <option value="insumos">Insumos</option>
+                <option value="EPIs">EPIs</option>
+                <option value="outros">Outros</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-xl">
+              <Filter size={14} className="text-slate-400" />
+              <select 
+                className="bg-transparent text-[10px] font-black uppercase outline-none text-slate-600"
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+              >
+                <option value="all">Todos Status</option>
+                <option value="ok">Status: OK</option>
+                <option value="critical">Status: Crítico</option>
+              </select>
+            </div>
+
+            {(categoryFilter !== 'all' || statusFilter !== 'all' || searchTerm !== '') && (
+              <button 
+                onClick={() => {
+                  setCategoryFilter('all');
+                  setStatusFilter('all');
+                  setSearchTerm('');
+                }}
+                className="text-[9px] font-black text-blue-600 uppercase hover:underline"
+              >
+                Limpar Filtros
+              </button>
+            )}
           </div>
         </div>
         
@@ -319,7 +379,7 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
                          </div>
                        ) : (
                          <div className="flex items-center justify-center gap-1.5 text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full inline-flex">
-                            <Package size={12} strokeWidth={3} />
+                            <CheckCircle2 size={12} strokeWidth={3} />
                             <span className="text-[8px] font-black uppercase tracking-widest">OK</span>
                          </div>
                        )}
@@ -327,6 +387,13 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
                   </tr>
                 );
               })}
+              {filteredItems.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-8 py-16 text-center text-slate-300 font-black uppercase italic text-xs">
+                    Nenhum item corresponde aos filtros selecionados
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
