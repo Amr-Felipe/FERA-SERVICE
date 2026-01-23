@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { AppState, InventoryItem } from '../types';
-import { Package, Plus, Minus, Search, ArrowRightLeft, X } from 'lucide-react';
+import { AppState, InventoryItem, InventoryExit } from '../types';
+import { Package, Plus, Minus, Search, ArrowRightLeft, X, Trash2, AlertCircle } from 'lucide-react';
 
 interface InventoryProps {
   state: AppState;
@@ -43,6 +43,41 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
         }
       ]
     }));
+  };
+
+  const deleteMovement = (movementId: string) => {
+    const movement = state.inventoryExits.find(m => m.id === movementId);
+    if (!movement) return;
+
+    const item = state.inventory.find(i => i.id === movement.itemId);
+    const isEntry = movement.destination === 'Reposição';
+    const typeLabel = isEntry ? 'ENTRADA' : 'SAÍDA';
+
+    const confirmMessage = `⚠️ CONFIRMAR ESTORNO DE LANÇAMENTO\n\n` +
+      `Item: ${item?.name || 'Item Desconhecido'}\n` +
+      `Tipo: ${typeLabel}\n` +
+      `Quantidade: ${movement.quantity}\n\n` +
+      `Esta ação irá excluir o registro do histórico e atualizar o saldo do estoque automaticamente. Deseja continuar?`;
+
+    if (window.confirm(confirmMessage)) {
+      // Regra de segurança: Se for estorno de uma ENTRADA, vamos subtrair do estoque.
+      // Precisamos garantir que o estoque não fique negativo.
+      if (isEntry && item && item.currentQty < movement.quantity) {
+        alert(`❌ Erro de Consistência: Não é possível estornar esta Entrada pois o saldo atual (${item.currentQty}) é menor que a quantidade do lançamento (${movement.quantity}).`);
+        return;
+      }
+
+      setState(prev => ({
+        ...prev,
+        inventory: prev.inventory.map(i => {
+          if (i.id !== movement.itemId) return i;
+          // Se era ENTRADA (Reposição), subtraímos. Se era SAÍDA, somamos de volta.
+          const adjustment = isEntry ? -movement.quantity : movement.quantity;
+          return { ...i, currentQty: i.currentQty + adjustment };
+        }),
+        inventoryExits: prev.inventoryExits.filter(m => m.id !== movementId)
+      }));
+    }
   };
 
   const handleAddItem = (e: React.FormEvent) => {
@@ -192,23 +227,33 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
                 <th className="px-6 py-4">Item</th>
                 <th className="px-6 py-4">Qtd</th>
                 <th className="px-6 py-4">Motivo</th>
+                <th className="px-6 py-4 text-center">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-600">
-              {state.inventoryExits.slice(-10).reverse().map(exit => {
+              {state.inventoryExits.slice(-15).reverse().map(exit => {
                 const item = state.inventory.find(i => i.id === exit.itemId);
                 const isOut = exit.destination !== 'Reposição';
                 return (
-                  <tr key={exit.id} className="hover:bg-slate-50/50">
+                  <tr key={exit.id} className="hover:bg-slate-50/50 group/row">
                     <td className="px-6 py-4 whitespace-nowrap">{exit.date}</td>
                     <td className="px-6 py-4 font-black text-slate-800 uppercase tracking-tight">{item?.name || 'Item Removido'}</td>
                     <td className={`px-6 py-4 font-black ${isOut ? 'text-rose-600' : 'text-emerald-600'}`}>{isOut ? '-' : '+'}{exit.quantity}</td>
                     <td className="px-6 py-4 italic text-slate-400">{exit.destination}</td>
+                    <td className="px-6 py-4 text-center">
+                      <button 
+                        onClick={() => deleteMovement(exit.id)}
+                        className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                        title="Estornar Lançamento"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
               {state.inventoryExits.length === 0 && (
-                <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-300 font-bold uppercase tracking-wider">Sem movimentações recentes</td></tr>
+                <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-300 font-bold uppercase tracking-wider">Sem movimentações recentes</td></tr>
               )}
             </tbody>
           </table>
