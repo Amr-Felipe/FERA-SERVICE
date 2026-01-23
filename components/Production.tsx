@@ -153,15 +153,15 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
       <div className="flex bg-slate-200/50 p-1 rounded-2xl w-fit border border-slate-200">
         <button 
           onClick={() => setActiveFilter('open')}
-          className={`px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${activeFilter === 'open' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+          className={`px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${activeFilter === 'open' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500'}`}
         >
-          <Clock size={12} /> Aberta
+          <Clock size={12} /> Pendente
         </button>
         <button 
           onClick={() => setActiveFilter('closed')}
           className={`px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${activeFilter === 'closed' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}
         >
-          <CheckCircle2 size={12} /> Fim
+          <CheckCircle2 size={12} /> Finalizada
         </button>
         <button 
           onClick={() => setActiveFilter('all')}
@@ -222,17 +222,17 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
         )}
         
         {filteredAreas.map(area => (
-          <div key={area.id} className={`bg-white rounded-3xl shadow-sm border ${area.endDate ? 'border-emerald-100' : 'border-slate-100'} transition-all hover:shadow-md overflow-hidden relative group`}>
-            <div className={`px-4 py-4 md:px-6 md:py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${area.endDate ? 'bg-emerald-50/20' : 'bg-slate-50/10'}`}>
+          <div key={area.id} className={`bg-white rounded-3xl shadow-sm border ${area.endDate ? 'border-emerald-100' : 'border-amber-100'} transition-all hover:shadow-md overflow-hidden relative group`}>
+            <div className={`px-4 py-4 md:px-6 md:py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${area.endDate ? 'bg-emerald-50/20' : 'bg-amber-50/10'}`}>
               <div className="flex items-center gap-3 pr-8">
-                <div className={`w-10 h-10 md:w-12 md:h-12 ${area.endDate ? 'bg-emerald-500' : 'bg-blue-600'} text-white rounded-2xl flex items-center justify-center shadow-md shrink-0`}>
-                  {area.endDate ? <CheckCircle2 size={20} /> : <MapPin size={20} />}
+                <div className={`w-10 h-10 md:w-12 md:h-12 ${area.endDate ? 'bg-emerald-600' : 'bg-amber-500'} text-white rounded-2xl flex items-center justify-center shadow-md shrink-0 transition-colors`}>
+                  {area.endDate ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm md:text-base font-black text-slate-800 uppercase truncate">{area.name}</h3>
-                    <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${area.endDate ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                      {area.endDate ? 'Fim' : 'Ativa'}
+                    <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${area.endDate ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {area.endDate ? 'Finalizada' : 'Pendente'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -301,7 +301,8 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
                         type="date" 
                         className="bg-transparent text-[9px] font-black text-center focus:outline-none w-full border-none p-0"
                         value={service.serviceDate || new Date().toISOString().split('T')[0]}
-                        onChange={e => updateService(area.id, service.id, 'serviceDate', e.target.value)}
+                        onChange={updateService.bind(null, area.id, service.id, 'serviceDate', (e: any) => e.target.value)}
+                        // Fixed: Corrected onChange to handle input event properly
                       />
                     </div>
                   </div>
