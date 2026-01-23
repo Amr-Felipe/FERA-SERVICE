@@ -5,7 +5,7 @@ export const INITIAL_STATE: AppState = {
   areas: [
     {
       id: 'a1',
-      name: 'Avenida Principal',
+      name: 'OS-001',
       startDate: '2024-03-01',
       startReference: 'Trevo de Entrada',
       endReference: 'Posto de Gasolina Shell',
@@ -23,9 +23,10 @@ export const INITIAL_STATE: AppState = {
     }
   ],
   employees: [
-    { id: 'e1', name: 'João Silva', role: 'Operador de Roçadeira', status: 'active' },
-    { id: 'e2', name: 'Maria Santos', role: 'Ajudante Geral', status: 'active' }
+    { id: 'e1', name: 'João Silva', role: 'Operador de Roçadeira', status: 'active', defaultDailyRate: 85.00 },
+    { id: 'e2', name: 'Maria Santos', role: 'Ajudante Geral', status: 'active', defaultDailyRate: 75.00 }
   ],
+  attendanceRecords: [],
   productionRecords: [],
   inventory: [
     { id: 'i1', name: 'Fio de Nylon', category: 'insumos', currentQty: 10, minQty: 5, unitValue: 45.0 },

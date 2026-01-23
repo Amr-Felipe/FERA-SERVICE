@@ -38,6 +38,15 @@ export interface Employee {
   name: string;
   role: string;
   status: 'active' | 'inactive';
+  defaultDailyRate?: number;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  employeeId: string;
+  date: string;
+  value: number;
+  status: 'present' | 'absent';
 }
 
 export interface ProductionRecord {
@@ -85,6 +94,7 @@ export interface CashOut {
 export interface AppState {
   areas: Area[];
   employees: Employee[];
+  attendanceRecords: AttendanceRecord[];
   productionRecords: ProductionRecord[];
   inventory: InventoryItem[];
   inventoryExits: InventoryExit[];

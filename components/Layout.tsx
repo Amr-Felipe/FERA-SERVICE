@@ -37,7 +37,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
     <div className="flex flex-col h-full bg-slate-900 text-white w-64 fixed left-0 top-0 shadow-xl z-50">
       <div className="p-6">
         <h1 className="text-xl font-black tracking-tighter flex items-center gap-2 uppercase">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/20">G</div>
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/20">FS</div>
           Fera Service
         </h1>
         <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1 opacity-60">
