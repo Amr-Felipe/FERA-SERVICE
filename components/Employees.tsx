@@ -19,7 +19,8 @@ import {
   Download,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  CreditCard
 } from 'lucide-react';
 
 interface EmployeesProps {
@@ -51,6 +52,17 @@ const Employees: React.FC<EmployeesProps> = ({ state, setState }) => {
 
   const currentMonthStr = currentCalendarDate.toISOString().substring(0, 7);
   
+  // Cálculo do Resumo das Diárias do Mês Atual do Calendário
+  const monthlyAttendanceSummary = useMemo(() => {
+    const records = (state.attendanceRecords || []).filter(r => 
+      r.date.startsWith(currentMonthStr) && r.status === 'present'
+    );
+    return {
+      totalValue: records.reduce((acc, r) => acc + r.value, 0),
+      totalAttendances: records.length
+    };
+  }, [state.attendanceRecords, currentMonthStr]);
+
   const getEmployeeStats = (employeeId: string, monthStr: string) => {
     const records = (state.attendanceRecords || []).filter(r => 
       r.employeeId === employeeId && r.date.startsWith(monthStr)
@@ -136,6 +148,33 @@ const Employees: React.FC<EmployeesProps> = ({ state, setState }) => {
           >
             <Users size={14} /> Equipe
           </button>
+        </div>
+      </div>
+
+      {/* Resumo de Diárias */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 px-1">
+        <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
+          <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+             <CreditCard size={18} strokeWidth={2.5} />
+          </div>
+          <div>
+            <p className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1">Total Diárias</p>
+            <p className="text-sm md:text-lg font-black text-slate-800">
+              R$ {monthlyAttendanceSummary.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+        </div>
+        
+        <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+             <CalendarCheck size={18} strokeWidth={2.5} />
+          </div>
+          <div>
+            <p className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1">Presenças</p>
+            <p className="text-sm md:text-lg font-black text-slate-800">
+              {monthlyAttendanceSummary.totalAttendances} <span className="text-[10px] text-slate-400 font-bold uppercase ml-1">Registros</span>
+            </p>
+          </div>
         </div>
       </div>
 
