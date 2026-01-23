@@ -17,7 +17,9 @@ export const INITIAL_STATE: AppState = {
           type: ServiceType.ROCADA_TRATOR_M2,
           areaM2: 5000,
           unitValue: 1.5,
-          totalValue: 7500
+          totalValue: 7500,
+          // Fixed: Added missing required serviceDate property
+          serviceDate: '2024-03-01'
         }
       ]
     }

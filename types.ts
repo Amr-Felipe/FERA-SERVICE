@@ -31,6 +31,7 @@ export interface Service {
   areaM2: number;
   unitValue: number;
   totalValue: number;
+  serviceDate: string; // Formato YYYY-MM-DD
 }
 
 export interface Employee {

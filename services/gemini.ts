@@ -3,13 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 import { AppState } from "../types";
 
 export const askAssistant = async (question: string, state: AppState) => {
-  const apiKey = process.env.API_KEY;
-  
-  if (!apiKey) {
-    throw new Error("API_KEY não configurada nas variáveis de ambiente da Vercel.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Use named parameter and direct process.env.API_KEY access
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const context = {
     totalAreas: state.areas.length,
@@ -24,9 +19,13 @@ export const askAssistant = async (question: string, state: AppState) => {
   };
 
   try {
+    // Upgraded to gemini-3-pro-preview for complex operational reasoning tasks
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Você é o Diretor de Operações Inteligente de uma empresa de manutenção urbana.
+      model: 'gemini-3-pro-preview',
+      contents: question,
+      config: {
+        // Use systemInstruction for defining behavioral constraints and context
+        systemInstruction: `Você é o Diretor de Operações Inteligente de uma empresa de manutenção urbana.
       Você tem acesso aos dados operacionais e financeiros em tempo real.
       
       REGRAS DE NEGÓCIO IMPORTANTES:
@@ -37,15 +36,15 @@ export const askAssistant = async (question: string, state: AppState) => {
       DADOS DO SISTEMA:
       ${JSON.stringify(context, null, 2)}
       
-      INSTRUÇÃO: Responda em português, de forma profissional, executiva e baseada em dados. Se houver alertas (estoque baixo ou meta longe), mencione-os de forma proativa.
-      
-      PERGUNTA DO USUÁRIO: ${question}`,
-      config: {
+      INSTRUÇÃO: Responda em português, de forma profissional, executiva e baseada em dados. Se houver alertas (estoque baixo ou meta longe), mencione-os de forma proativa.`,
         temperature: 0.2,
-        maxOutputTokens: 800,
+        // When setting maxOutputTokens, a thinkingBudget must be set to ensure valid output
+        maxOutputTokens: 2000,
+        thinkingConfig: { thinkingBudget: 1000 },
       }
     });
 
+    // Access .text property directly (not a method)
     return response.text;
   } catch (error) {
     console.error("Erro na API Gemini:", error);

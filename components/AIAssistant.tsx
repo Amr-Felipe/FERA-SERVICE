@@ -32,7 +32,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ state }) => {
       const response = await askAssistant(userMessage, state);
       setMessages(prev => [...prev, { role: 'bot', text: response || 'Desculpe, não consegui processar sua pergunta.' }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'bot', text: 'Houve um erro ao consultar o assistente. Verifique sua chave de API.' }]);
+      // Updated error message to remove API key reference as per coding guidelines
+      setMessages(prev => [...prev, { role: 'bot', text: 'Houve um erro ao consultar o assistente. Por favor, tente novamente em alguns instantes.' }]);
     } finally {
       setIsLoading(false);
     }
