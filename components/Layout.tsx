@@ -38,7 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
       <div className="p-6">
         <h1 className="text-xl font-black tracking-tighter flex items-center gap-2 uppercase">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/20">G</div>
-          Gestor Urbano
+          Fera Service
         </h1>
         <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1 opacity-60">
           {userRole === 'ADMIN' ? 'Administrador' : 'Operacional'}
