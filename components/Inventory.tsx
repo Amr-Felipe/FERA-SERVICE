@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { AppState, InventoryItem, InventoryExit } from '../types';
 import { 
   Package, 
@@ -12,7 +12,8 @@ import {
   AlertCircle,
   ArrowDownCircle,
   ArrowUpCircle,
-  ListFilter
+  ListFilter,
+  ChevronDown
 } from 'lucide-react';
 
 interface InventoryProps {
@@ -24,9 +25,12 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   
-  // Estados para o novo painel de movimentação
+  // Estados para o painel de movimentação com busca
   const [selectedItemId, setSelectedItemId] = useState('');
+  const [itemSearchText, setItemSearchText] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [movementQty, setMovementQty] = useState('1');
+  const dropdownRef = useRef<HTMLDivElement>(null);
   
   const [newItem, setNewItem] = useState<Partial<InventoryItem>>({
     name: '',
@@ -35,6 +39,17 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
     minQty: 0,
     unitValue: 0
   });
+
+  // Fechar dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -45,9 +60,15 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const filteredDropdownItems = useMemo(() => {
+    return state.inventory
+      .filter(item => item.name.toLowerCase().includes(itemSearchText.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [state.inventory, itemSearchText]);
+
   const handleMovement = (type: 'in' | 'out') => {
     if (!selectedItemId) {
-      alert("Selecione um item primeiro.");
+      alert("Selecione um item da lista primeiro.");
       return;
     }
     const qty = parseInt(movementQty);
@@ -82,7 +103,8 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
     }));
 
     setMovementQty('1');
-    // feedback visual opcional poderia ser adicionado aqui
+    setSelectedItemId('');
+    setItemSearchText('');
   };
 
   const deleteMovement = (movementId: string) => {
@@ -139,7 +161,7 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
       </div>
 
       {/* PAINEL DE MOVIMENTAÇÃO CENTRALIZADO */}
-      <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm">
+      <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm relative z-50">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
             <ArrowRightLeft size={20} />
@@ -148,25 +170,81 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-          <div className="md:col-span-6 space-y-1">
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Selecionar Item</label>
-            <select 
-              className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl text-xs font-black text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"
-              value={selectedItemId}
-              onChange={e => setSelectedItemId(e.target.value)}
-            >
-              <option value="">Selecione um produto...</option>
-              {state.inventory.sort((a,b) => a.name.localeCompare(b.name)).map(item => (
-                <option key={item.id} value={item.id}>{item.name.toUpperCase()} (Saldo: {item.currentQty})</option>
-              ))}
-            </select>
+          {/* BUSCA DE ITEM DINÂMICA */}
+          <div className="md:col-span-6 space-y-1 relative" ref={dropdownRef}>
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Buscar Item</label>
+            <div className="relative group">
+              <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isDropdownOpen ? 'text-blue-500' : 'text-slate-400'}`} size={16} />
+              <input 
+                type="text"
+                className="w-full bg-slate-50 border border-slate-200 pl-11 pr-10 py-4 rounded-2xl text-xs font-black text-slate-700 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                placeholder="Digite o nome do produto..."
+                value={itemSearchText}
+                onFocus={() => setIsDropdownOpen(true)}
+                onChange={e => {
+                  setItemSearchText(e.target.value);
+                  setIsDropdownOpen(true);
+                  if (selectedItemId) setSelectedItemId(''); // Reseta seleção se digitar
+                }}
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                {selectedItemId && (
+                  <button 
+                    onClick={() => {
+                      setSelectedItemId('');
+                      setItemSearchText('');
+                    }}
+                    className="p-1 hover:bg-slate-200 rounded-full text-slate-400"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+                <ChevronDown size={14} className={`text-slate-300 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </div>
+
+              {/* LISTA FILTRADA */}
+              {isDropdownOpen && (
+                <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white border border-slate-100 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-64 overflow-y-auto z-[100]">
+                  {filteredDropdownItems.length > 0 ? (
+                    filteredDropdownItems.map(item => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={`w-full text-left px-5 py-3.5 flex justify-between items-center transition-colors border-b border-slate-50 last:border-0 hover:bg-blue-50 group ${selectedItemId === item.id ? 'bg-blue-50' : ''}`}
+                        onClick={() => {
+                          setSelectedItemId(item.id);
+                          setItemSearchText(item.name.toUpperCase());
+                          setIsDropdownOpen(false);
+                        }}
+                      >
+                        <div className="flex flex-col">
+                          <span className={`text-[11px] font-black uppercase tracking-tight ${selectedItemId === item.id ? 'text-blue-600' : 'text-slate-700'}`}>
+                            {item.name}
+                          </span>
+                          <span className="text-[8px] font-bold text-slate-400 uppercase">{item.category}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className={`text-[10px] font-black ${item.currentQty <= item.minQty ? 'text-rose-500' : 'text-slate-400'}`}>
+                            Saldo: {item.currentQty}
+                          </span>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center">
+                      <p className="text-[10px] font-black text-slate-300 uppercase italic">Nenhum item encontrado</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="md:col-span-2 space-y-1">
             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantidade</label>
             <input 
               type="number"
-              className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl text-xs font-black text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl text-xs font-black text-slate-700 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
               value={movementQty}
               onChange={e => setMovementQty(e.target.value)}
             />
@@ -175,7 +253,7 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
           <div className="md:col-span-4 flex gap-2">
             <button 
               onClick={() => handleMovement('out')}
-              className="flex-1 bg-white border-2 border-slate-100 text-slate-600 p-4 rounded-2xl font-black uppercase text-[10px] hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all flex items-center justify-center gap-2"
+              className="flex-1 bg-white border-2 border-slate-100 text-slate-600 p-4 rounded-2xl font-black uppercase text-[10px] hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all flex items-center justify-center gap-2"
             >
               <ArrowDownCircle size={16} /> Saída
             </button>
@@ -190,7 +268,7 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
       </div>
 
       {/* TABELA DE ESTOQUE ATUAL */}
-      <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden relative z-0">
         <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/30">
           <div className="flex items-center gap-3">
              <div className="w-8 h-8 bg-slate-900 text-white rounded-lg flex items-center justify-center"><ListFilter size={16} /></div>
@@ -308,7 +386,7 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
       </div>
 
       {showAddForm && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[70] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[120] flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 p-8 space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Cadastrar Novo Produto</h3>
@@ -347,7 +425,6 @@ const Inventory: React.FC<InventoryProps> = ({ state, setState }) => {
   );
 };
 
-// Pequeno helper icon para não precisar importar do lucide
 const HistoryIcon = ({size, className}: {size: number, className: string}) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
