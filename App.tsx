@@ -15,9 +15,23 @@ const App: React.FC = () => {
   const [state, setState] = useState<AppState>(() => {
     try {
       const saved = localStorage.getItem('gestor_urbano_state');
-      return saved ? JSON.parse(saved) : INITIAL_STATE;
+      if (!saved) return INITIAL_STATE;
+      
+      const parsed = JSON.parse(saved);
+      // Garante que novas chaves adicionadas ao sistema (como attendanceRecords) 
+      // existam mesmo se o usuário tiver um save antigo no navegador.
+      return {
+        ...INITIAL_STATE,
+        ...parsed,
+        attendanceRecords: parsed.attendanceRecords || [],
+        employees: parsed.employees || INITIAL_STATE.employees,
+        areas: parsed.areas || INITIAL_STATE.areas,
+        inventory: parsed.inventory || INITIAL_STATE.inventory,
+        cashIn: parsed.cashIn || INITIAL_STATE.cashIn,
+        cashOut: parsed.cashOut || INITIAL_STATE.cashOut,
+      };
     } catch (e) {
-      console.warn("Acesso ao localStorage negado ou corrompido. Usando estado inicial.", e);
+      console.warn("Erro ao restaurar estado. Usando inicial.", e);
       return INITIAL_STATE;
     }
   });
@@ -29,7 +43,7 @@ const App: React.FC = () => {
     try {
       localStorage.setItem('gestor_urbano_state', JSON.stringify(state));
     } catch (e) {
-      console.error("Falha ao salvar estado no localStorage:", e);
+      console.error("Falha ao salvar estado:", e);
     }
   }, [state]);
 
