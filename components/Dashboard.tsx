@@ -19,6 +19,10 @@ interface DashboardProps {
   setActiveTab: (tab: string) => void;
 }
 
+const formatMoney = (value: number) => {
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ state, setState, setActiveTab }) => {
   const totalProductionM2 = state.areas.reduce((acc, area) => 
     acc + area.services.reduce((sAcc, s) => sAcc + s.areaM2, 0), 0
@@ -37,8 +41,8 @@ const Dashboard: React.FC<DashboardProps> = ({ state, setState, setActiveTab }) 
 
   const stats = [
     { label: 'Produção (m²)', value: totalProductionM2.toLocaleString('pt-BR'), icon: Map, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Faturamento (R$)', value: totalProductionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }), icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Saldo (R$)', value: currentBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 }), icon: Wallet, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Faturamento (R$)', value: formatMoney(totalProductionValue), icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Saldo (R$)', value: formatMoney(currentBalance), icon: Wallet, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { label: 'Alertas Estoque', value: lowStock.length, icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50' },
   ];
 
@@ -111,6 +115,7 @@ const Dashboard: React.FC<DashboardProps> = ({ state, setState, setActiveTab }) 
                    { [0, 1].map((entry, index) => <Cell key={`cell-${index}`} fill={index === 0 ? '#2563eb' : '#f1f5f9'} />) }
                 </Bar>
               </BarChart>
+            {/* Fix: Corrigido fechamento da tag ResponsiveContainer */}
             </ResponsiveContainer>
           </div>
           

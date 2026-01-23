@@ -8,6 +8,10 @@ interface FinanceProps {
   setState: React.Dispatch<React.SetStateAction<AppState>>;
 }
 
+const formatMoney = (value: number) => {
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 const Finance: React.FC<FinanceProps> = ({ state, setState }) => {
   const [activeTab, setActiveTab] = React.useState<'in' | 'out'>('in');
   const [showForm, setShowForm] = React.useState(false);
@@ -57,8 +61,13 @@ const Finance: React.FC<FinanceProps> = ({ state, setState }) => {
   const exportToCSV = () => {
     const data = activeTab === 'in' ? state.cashIn : state.cashOut;
     const headers = activeTab === 'in' ? "ID;Data;Valor;Referencia;Tipo" : "ID;Data;Valor;Tipo";
-    const rows = data.map(item => Object.values(item).join(";")).join("\n");
-    const blob = new Blob([`${headers}\n${rows}`], { type: 'text/csv;charset=utf-8' });
+    // Ajustado para formatar o valor com vírgula para Excel BR
+    const rows = data.map(item => {
+        const values = Object.values(item);
+        const formatted = values.map(v => typeof v === 'number' ? formatMoney(v) : v);
+        return formatted.join(";");
+    }).join("\n");
+    const blob = new Blob(["\ufeff" + `${headers}\n${rows}`], { type: 'text/csv;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -96,7 +105,7 @@ const Finance: React.FC<FinanceProps> = ({ state, setState }) => {
           </div>
           <div>
             <p className="text-[10px] text-slate-400 font-bold uppercase">Entradas</p>
-            <p className="text-2xl font-black text-slate-800">R$ {totalIn.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-black text-slate-800">R$ {formatMoney(totalIn)}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -105,7 +114,7 @@ const Finance: React.FC<FinanceProps> = ({ state, setState }) => {
           </div>
           <div>
             <p className="text-[10px] text-slate-400 font-bold uppercase">Saídas</p>
-            <p className="text-2xl font-black text-slate-800">R$ {totalOut.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-black text-slate-800">R$ {formatMoney(totalOut)}</p>
           </div>
         </div>
         <div className="bg-blue-600 p-6 rounded-3xl shadow-xl shadow-blue-200 flex items-center gap-4 text-white">
@@ -114,7 +123,7 @@ const Finance: React.FC<FinanceProps> = ({ state, setState }) => {
           </div>
           <div>
             <p className="text-[10px] text-blue-200 font-bold uppercase">Saldo em Caixa</p>
-            <p className="text-2xl font-black">R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-black">R$ {formatMoney(balance)}</p>
           </div>
         </div>
       </div>
@@ -241,7 +250,7 @@ const Finance: React.FC<FinanceProps> = ({ state, setState }) => {
                     </span>
                   </td>
                   <td className={`px-8 py-5 text-lg font-black text-right ${activeTab === 'in' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    R$ {item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {formatMoney(item.value)}
                   </td>
                 </tr>
               ))}

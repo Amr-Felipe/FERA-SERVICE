@@ -9,6 +9,10 @@ interface ProductionProps {
   setState: React.Dispatch<React.SetStateAction<AppState>>;
 }
 
+const formatMoney = (value: number) => {
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 const Production: React.FC<ProductionProps> = ({ state, setState }) => {
   const [isAddingArea, setIsAddingArea] = React.useState(false);
   const [activeFilter, setActiveFilter] = React.useState<'all' | 'open' | 'closed'>('open');
@@ -241,7 +245,7 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
                 <div className="text-right">
                   <p className="text-[8px] uppercase font-black text-slate-400 leading-none">Total O.S.</p>
                   <p className="text-sm md:text-base font-black text-slate-800">
-                    R$ {area.services.reduce((acc, s) => acc + s.totalValue, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {formatMoney(area.services.reduce((acc, s) => acc + s.totalValue, 0))}
                   </p>
                 </div>
                 
@@ -314,12 +318,12 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
                   </div>
 
                   <div className="hidden md:block col-span-1">
-                    <p className="text-[10px] font-bold text-slate-400 text-center">R${service.unitValue.toFixed(2)}</p>
+                    <p className="text-[10px] font-bold text-slate-400 text-center">R${formatMoney(service.unitValue)}</p>
                   </div>
 
                   <div className="col-span-1 md:col-span-1 text-center border-t md:border-t-0 pt-2 md:pt-0">
                     <label className="text-[7px] uppercase font-black text-slate-400 block mb-0.5 px-0.5 md:hidden">Total</label>
-                    <p className="text-[10px] font-black text-blue-600">R$ {service.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}</p>
+                    <p className="text-[10px] font-black text-blue-600">R$ {formatMoney(service.totalValue)}</p>
                   </div>
 
                   <div className="col-span-1 md:col-span-1 flex justify-end items-center border-t md:border-t-0 pt-2 md:pt-0">

@@ -40,6 +40,14 @@ export interface Employee {
   role: string;
   status: 'active' | 'inactive';
   defaultDailyRate?: number;
+  // Novos campos de dados pessoais
+  cpf?: string;
+  birthDate?: string;
+  address?: string;
+  phone?: string;
+  paymentType?: 'pix' | 'bank';
+  pixKey?: string;
+  bankAccount?: string;
 }
 
 export interface AttendanceRecord {
@@ -48,6 +56,7 @@ export interface AttendanceRecord {
   date: string;
   value: number;
   status: 'present' | 'absent';
+  paymentStatus?: 'paid' | 'pending'; // Novo campo
 }
 
 export interface ProductionRecord {
