@@ -22,6 +22,11 @@ const Finance: React.FC<FinanceProps> = ({ state, setState }) => {
   const totalOut = state.cashOut.reduce((acc, c) => acc + c.value, 0);
   const balance = totalIn - totalOut;
 
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    return dateStr.split('-').reverse().join('/');
+  };
+
   const handleSaveMove = (e: React.FormEvent) => {
     e.preventDefault();
     const valueNum = parseFloat(formData.value);
@@ -51,7 +56,6 @@ const Finance: React.FC<FinanceProps> = ({ state, setState }) => {
 
   const exportToCSV = () => {
     const data = activeTab === 'in' ? state.cashIn : state.cashOut;
-    // Cabeçalhos otimizados para Power BI
     const headers = activeTab === 'in' ? "ID;Data;Valor;Referencia;Tipo" : "ID;Data;Valor;Tipo";
     const rows = data.map(item => Object.values(item).join(";")).join("\n");
     const blob = new Blob([`${headers}\n${rows}`], { type: 'text/csv;charset=utf-8' });
@@ -229,7 +233,7 @@ const Finance: React.FC<FinanceProps> = ({ state, setState }) => {
               )}
               {(activeTab === 'in' ? state.cashIn : state.cashOut).map((item: any) => (
                 <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-8 py-5 text-sm font-bold text-slate-500">{item.date}</td>
+                  <td className="px-8 py-5 text-sm font-bold text-slate-500">{formatDate(item.date)}</td>
                   <td className="px-8 py-5 text-sm font-black text-slate-800 uppercase tracking-tight">{item.reference || 'NÃO ESPECIFICADO'}</td>
                   <td className="px-8 py-5">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${activeTab === 'in' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>

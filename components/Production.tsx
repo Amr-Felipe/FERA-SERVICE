@@ -21,6 +21,11 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
     services: []
   });
 
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    return dateStr.split('-').reverse().join('/');
+  };
+
   const handleAddArea = () => {
     if (!newArea.name || !newArea.startReference) {
       alert("Por favor, preencha o número da O.S. e o ponto de início.");
@@ -126,7 +131,6 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
 
   return (
     <div className="space-y-4 pb-20 max-w-full overflow-hidden">
-      {/* Header Reduzido */}
       <div className="flex items-center justify-between gap-2 px-1">
         <div>
           <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">O.S. Urbanas</h2>
@@ -142,7 +146,6 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
         </button>
       </div>
 
-      {/* Filtros Compactos */}
       <div className="flex bg-slate-200/50 p-1 rounded-2xl w-fit border border-slate-200">
         <button 
           onClick={() => setActiveFilter('open')}
@@ -206,7 +209,6 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
         </div>
       )}
 
-      {/* Lista de O.S. */}
       <div className="grid grid-cols-1 gap-4">
         {filteredAreas.length === 0 && (
           <div className="bg-white py-16 rounded-[40px] border-2 border-dashed border-slate-100 text-center">
@@ -217,7 +219,6 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
         
         {filteredAreas.map(area => (
           <div key={area.id} className={`bg-white rounded-3xl shadow-sm border ${area.endDate ? 'border-emerald-100' : 'border-slate-100'} transition-all hover:shadow-md overflow-hidden relative group`}>
-            {/* Cabeçalho do Card */}
             <div className={`px-4 py-4 md:px-6 md:py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${area.endDate ? 'bg-emerald-50/20' : 'bg-slate-50/10'}`}>
               <div className="flex items-center gap-3 pr-8">
                 <div className={`w-10 h-10 md:w-12 md:h-12 ${area.endDate ? 'bg-emerald-500' : 'bg-blue-600'} text-white rounded-2xl flex items-center justify-center shadow-md shrink-0`}>
@@ -231,7 +232,7 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase truncate max-w-[120px] md:max-w-xs">{area.startReference} ➜ {area.endReference}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase truncate max-w-[120px] md:max-w-xs">{formatDate(area.startDate)} | {area.startReference} ➜ {area.endReference}</span>
                   </div>
                 </div>
               </div>
@@ -251,7 +252,6 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
                     <button onClick={() => finalizeArea(area.id)} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-sm">Encerrar</button>
                   )}
                   
-                  {/* Botão de Excluir O.S. agora integrado ao fluxo de botões para evitar sobreposição */}
                   <button 
                     onClick={() => deleteArea(area.id)}
                     className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
@@ -263,7 +263,6 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
               </div>
             </div>
 
-            {/* Listagem de Serviços na O.S. */}
             <div className="p-3 md:p-5 space-y-2 border-t border-slate-50 bg-white">
               {area.services.length > 0 && (
                 <div className="hidden md:grid grid-cols-7 gap-2 px-3 mb-1">
@@ -278,7 +277,6 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
               
               {area.services.map(service => (
                 <div key={service.id} className="grid grid-cols-3 md:grid-cols-7 gap-2 items-center bg-slate-50/50 p-2 md:p-3 rounded-xl border border-slate-100 hover:bg-white transition-all group/row">
-                  {/* Tipo Serviço */}
                   <div className="col-span-2 md:col-span-2 min-w-0">
                     <label className="text-[7px] uppercase font-black text-slate-400 block mb-0.5 px-0.5 md:hidden">Serviço</label>
                     <select 
@@ -291,7 +289,6 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
                     </select>
                   </div>
 
-                  {/* Data Serviço */}
                   <div className="col-span-1 md:col-span-1">
                     <label className="text-[7px] uppercase font-black text-slate-400 block mb-0.5 px-0.5 text-center md:hidden">Data</label>
                     <div className="relative flex justify-center">
@@ -305,7 +302,6 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
                     </div>
                   </div>
 
-                  {/* Medida */}
                   <div className="col-span-1 md:col-span-1 border-t md:border-t-0 pt-2 md:pt-0">
                     <label className="text-[7px] uppercase font-black text-slate-400 block mb-0.5 px-0.5 text-center md:hidden">Medida</label>
                     <input 
@@ -317,18 +313,15 @@ const Production: React.FC<ProductionProps> = ({ state, setState }) => {
                     />
                   </div>
 
-                  {/* Valor Unitário (Visível apenas MD) */}
                   <div className="hidden md:block col-span-1">
                     <p className="text-[10px] font-bold text-slate-400 text-center">R${service.unitValue.toFixed(2)}</p>
                   </div>
 
-                  {/* Valor Total */}
                   <div className="col-span-1 md:col-span-1 text-center border-t md:border-t-0 pt-2 md:pt-0">
                     <label className="text-[7px] uppercase font-black text-slate-400 block mb-0.5 px-0.5 md:hidden">Total</label>
                     <p className="text-[10px] font-black text-blue-600">R$ {service.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}</p>
                   </div>
 
-                  {/* Ações Serviço */}
                   <div className="col-span-1 md:col-span-1 flex justify-end items-center border-t md:border-t-0 pt-2 md:pt-0">
                     {!area.endDate && (
                       <button 
