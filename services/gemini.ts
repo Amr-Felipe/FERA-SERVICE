@@ -3,9 +3,10 @@ import { GoogleGenAI } from "@google/genai";
 import { AppState } from "../types";
 
 export const askAssistant = async (history: { role: 'user' | 'bot'; text: string }[], state: AppState) => {
-  // Inicialização segura via variável de ambiente
+  // Inicialização usando a API KEY do ambiente conforme as diretrizes
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
+  // Compilação do contexto operacional para a IA "enxergar" o sistema
   const context = {
     totalAreas: state.areas.length,
     productionM2: state.areas.reduce((acc, area) => acc + area.services.reduce((sAcc, s) => sAcc + s.areaM2, 0), 0),
@@ -13,12 +14,9 @@ export const askAssistant = async (history: { role: 'user' | 'bot'; text: string
     cashBalance: state.cashIn.reduce((acc, c) => acc + c.value, 0) - state.cashOut.reduce((acc, c) => acc + c.value, 0),
     lowStockItems: state.inventory.filter(i => i.currentQty <= i.minQty).map(i => i.name),
     goalM2: state.monthlyGoalM2,
-    employeesCount: state.employees.length,
-    activeEmployees: state.employees.filter(e => e.status === 'active').length,
-    attendanceToday: state.attendanceRecords.filter(r => r.date === new Date().toISOString().split('T')[0] && r.status === 'present').length
+    activeEmployees: state.employees.filter(e => e.status === 'active').length
   };
 
-  // Conversão do histórico para o formato da API Gemini
   const contents = history.map(msg => ({
     role: msg.role === 'bot' ? 'model' : 'user',
     parts: [{ text: msg.text }]
@@ -29,28 +27,18 @@ export const askAssistant = async (history: { role: 'user' | 'bot'; text: string
       model: 'gemini-3-pro-preview',
       contents: contents,
       config: {
-        systemInstruction: `Você é o Diretor de Operações Inteligente da Fera Service, empresa líder em manutenção urbana.
-      
-      SEU CONTEXTO OPERACIONAL EM TEMPO REAL:
-      ${JSON.stringify(context, null, 2)}
-      
-      SUA PERSONALIDADE E REGRAS:
-      1. Profissionalismo Executivo: Responda como um consultor sênior de operações.
-      2. Foco em Dados: Use números do contexto para embasar suas sugestões.
-      3. Proatividade: Se vir que o estoque está baixo ou a meta de m² está longe, alerte o usuário.
-      4. Regras Financeiras: Lembre que a produção deste mês é faturada no próximo (5º dia útil e dia 15).
-      5. Concisão: Vá direto ao ponto, mas seja educado.
-      
-      Sempre que mencionar valores monetários, use o formato R$ #.###,##.`,
-        temperature: 0.3,
-        maxOutputTokens: 1500,
-        thinkingConfig: { thinkingBudget: 500 },
+        systemInstruction: `Você é o Diretor de Operações da Fera Service. 
+        Você tem acesso aos seguintes dados em tempo real: ${JSON.stringify(context)}.
+        Sua missão é ajudar o gestor a tomar decisões sobre faturamento, produtividade e estoque.
+        Seja conciso, profissional e use R$ para valores monetários.`,
+        temperature: 0.7,
+        thinkingConfig: { thinkingBudget: 1000 }
       }
     });
 
     return response.text;
   } catch (error) {
-    console.error("Erro na inteligência artificial:", error);
-    throw error;
+    console.error("Erro no Fera Bot:", error);
+    return "Desculpe, tive um problema ao processar sua solicitação. Verifique sua conexão ou tente novamente.";
   }
 };
