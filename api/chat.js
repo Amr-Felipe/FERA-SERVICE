@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  const apiKey = process.env.GEMINI_KEY;
+  console.log("GEMINI_KEY existe?", !!process.env.GEMINI_KEY);
 
   if (!apiKey) {
     return res.status(500).json({ error: "GEMINI_KEY não encontrada" });
