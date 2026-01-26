@@ -25,9 +25,15 @@ export default async function handler(req, res) {
 
     console.log("GEMINI RESPONSE:", data);
 
-    res.status(200).json({
-      reply: data.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta"
-    });
+    let reply = "Sem resposta";
+
+if (data?.candidates?.length) {
+  const parts = data.candidates[0].content?.parts || [];
+  reply = parts.map(p => p.text).join(" ").trim() || reply;
+}
+
+res.status(200).json({ reply });
+
 
   } catch (err) {
     console.error("ERRO REAL:", err);
