@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    console.log("GEMINI RESPONSE:", data);
+    console.log("GEMINI RAW RESPONSE:", JSON.stringify(data, null, 2));
 
     let reply = "Sem resposta";
 
