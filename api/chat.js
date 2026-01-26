@@ -16,8 +16,7 @@ export default async function handler(req, res) {
     const text = response.text();
 
     return res.json({ reply: text });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Erro na IA" });
-  }
+} catch (err) {
+  console.error("ERRO GEMINI:", err);
+  return res.status(500).json({ error: err.message });
 }
