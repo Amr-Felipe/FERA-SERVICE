@@ -1,7 +1,9 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método não permitido" });
-  }
+  console.log("🔥 API /api/chat FOI CHAMADA");
+
+  res.status(200).json({ reply: "API ativa" });
+}
+
 
   console.log("GEMINI_KEY existe?", !!process.env.GEMINI_KEY);
 
