@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   try {
-    const { message } = req.body;
+   const message = req.body?.message || "Olá, teste automático";
 
     console.log("KEY:", process.env.GEMINI_KEY);
 
